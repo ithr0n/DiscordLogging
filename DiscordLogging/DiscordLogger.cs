@@ -1,44 +1,19 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Discord;
-using Discord.Webhook;
 using Microsoft.Extensions.Logging;
 
 namespace DiscordLogging
 {
-    public class DiscordLogger
+    public sealed class DiscordLogger
         : ILogger
     {
-        private readonly DiscordLoggerConfiguration _config;
-        private readonly BlockingCollection<DiscordLogModel> _queue;
+        private readonly AsyncWorker _asyncWorker;
 
-        public DiscordLogger(DiscordLoggerConfiguration config)
+        public DiscordLogger(AsyncWorker asyncWorker)
         {
-            _config = config;
-            _queue = new BlockingCollection<DiscordLogModel>();
-
-            Task.Factory.StartNew(ProcessLogQueue, null, TaskCreationOptions.LongRunning);
-        }
-
-        private async Task ProcessLogQueue(object state)
-        {
-            var client = new DiscordWebhookClient(_config.WebhookUrl);
-
-            foreach (var e in _queue.GetConsumingEnumerable(CancellationToken.None))
-            {
-                if (e.FileStream != null)
-                {
-                    await client.SendFileAsync(e.FileStream, e.FileName ?? "file.txt", e.Message);
-                }
-                else
-                {
-                    await client.SendMessageAsync(e.Message, embeds: e.DiscordEmbeds);
-                }
-            }
+            _asyncWorker = asyncWorker;
         }
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
@@ -56,22 +31,22 @@ namespace DiscordLogging
 
             var icon = logLevel switch
             {
-                LogLevel.Debug => ":spider_web: ",
-                LogLevel.Information => ":information_source: ",
-                LogLevel.Warning => ":warning: ",
-                LogLevel.Error => ":skull: ",
-                LogLevel.Critical => ":radioactive: ",
-                _ => string.Empty
+                LogLevel.Debug => ":spider_web:",
+                LogLevel.Information => ":information_source:",
+                LogLevel.Warning => ":warning:",
+                LogLevel.Error => ":skull:",
+                LogLevel.Critical => ":radioactive:",
+                _ => ":black_large_square:"
             };
 
             var model = new DiscordLogModel()
             {
-                Message = $"{icon}**[{logLevel}]**   {formattedMessage}"
+                Message = $"{icon} **[{logLevel}]**   {formattedMessage}"
             };
 
             if (exception == null)
             {
-                _queue.Add(model);
+                _asyncWorker.AddToQueue(model);
                 return;
             }
 
@@ -149,9 +124,9 @@ namespace DiscordLogging
 
             embed.AddField("Stack Trace", exception.StackTrace);
 
-            model.DiscordEmbeds = new[] { embed.Build() };
+            model.Embeds = new [] { embed.Build() };
 
-            _queue.Add(model);
+            _asyncWorker.AddToQueue(model);
         }
 
         public bool IsEnabled(LogLevel logLevel) => true;

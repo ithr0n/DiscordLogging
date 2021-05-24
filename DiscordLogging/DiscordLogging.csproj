@@ -10,10 +10,10 @@
         <Authors>Felix Czylwik</Authors>
         <PackageTags>Discord;Logging;Log;Microsoft.Extensions.Logging</PackageTags>
         <Description>
-            Discord Logging Provider for Microsoft.Extensions.Logging
+Logging Provider for Microsoft.Extensions.Logging via Discord Webhooks
 
-            Introduction to Logging in .NET - https://docs.microsoft.com/en-us/dotnet/core/extensions/logging
-            Information about Logging Providers - https://docs.microsoft.com/en-us/dotnet/core/extensions/logging-providers
+Introduction to Logging in .NET - https://docs.microsoft.com/en-us/dotnet/core/extensions/logging
+Information about Logging Providers - https://docs.microsoft.com/en-us/dotnet/core/extensions/logging-providers
         </Description>
     </PropertyGroup>
 

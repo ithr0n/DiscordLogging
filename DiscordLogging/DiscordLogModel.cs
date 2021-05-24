@@ -7,10 +7,10 @@ namespace DiscordLogging
     {
         public string Message { get; set; }
 
-        public Embed[] DiscordEmbeds { get; set; }
+        public Embed[] Embeds { get; set; }
 
         public string FileName { get; set; }
 
-        public Stream FileStream { get; set; }
+        public Stream File { get; set; }
     }
 }

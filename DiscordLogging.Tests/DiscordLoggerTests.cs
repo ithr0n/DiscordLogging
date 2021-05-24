@@ -22,14 +22,22 @@ namespace DiscordLogging.Tests
             _logger = GetDiscordLogger(Configuration["DiscordWebhookUrl"]);
         }
         
-        private static ILogger GetDiscordLogger(string urlWebhook)
+        private static ILogger GetDiscordLogger(string webhookUrl)
         {
             var factory = LoggerFactory.Create(builder =>
             {
-                builder.AddDiscord(new DiscordLoggerConfiguration(urlWebhook));
+                builder.SetMinimumLevel(LogLevel.Trace);
+                builder.AddDiscord(new DiscordLoggerConfiguration(webhookUrl));
             });
 
             return factory.CreateLogger<DiscordLoggerTests>();
+        }
+
+        [ClassCleanup]
+        public static void Cleanup()
+        {
+            // required, because webhooks are slow
+            System.Threading.Thread.Sleep(5000);
         }
 
         [TestMethod]
@@ -52,6 +60,17 @@ namespace DiscordLogging.Tests
         public void Should_Send_A_Discord_Information_Message()
         {
             _logger.LogInformation("My info message is here!");
+
+            Assert.IsTrue(true);
+        }
+
+        [TestMethod]
+        public void Should_Send_Many_Ordered_Discord_Information_Message()
+        {
+            for (var i = 0; i < 6; i++)
+            {
+                _logger.LogInformation($"Message {i}");
+            }
 
             Assert.IsTrue(true);
         }
@@ -103,7 +122,7 @@ namespace DiscordLogging.Tests
         }
 
         [TestMethod]
-        public void Should_Not_Allow_Empty_Webhook_Url()
+        public void Should_Not_Allow_Empty_Token()
         {
             try
             {
