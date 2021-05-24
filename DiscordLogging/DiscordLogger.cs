@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
-using System.IO;
+using System.Collections.Concurrent;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Webhook;
 using Microsoft.Extensions.Logging;
@@ -12,10 +14,24 @@ namespace DiscordLogging
         : ILogger
     {
         private readonly DiscordLoggerConfiguration _config;
+        private readonly BlockingCollection<DiscordLogModel> _queue;
 
         public DiscordLogger(DiscordLoggerConfiguration config)
         {
             _config = config;
+            _queue = new BlockingCollection<DiscordLogModel>();
+
+            Task.Factory.StartNew(ProcessLogQueue, null, TaskCreationOptions.LongRunning);
+        }
+
+        private async Task ProcessLogQueue(object state)
+        {
+            var client = new DiscordWebhookClient(_config.WebhookUrl);
+
+            foreach (var e in _queue.GetConsumingEnumerable(CancellationToken.None))
+            {
+                await client.SendMessageAsync(e.Message, embeds: e.DiscordEmbeds);
+            }
         }
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
@@ -31,71 +47,58 @@ namespace DiscordLogging
                 return;
             }
 
-            var embed = new EmbedBuilder()
+            var icon = logLevel switch
             {
-                Author = new EmbedAuthorBuilder
-                {
-                    Name = "DiscordLogger"
-                },
-                Title = logLevel.ToString(),
-                Description = formattedMessage
+                LogLevel.Debug => ":spider_web: ",
+                LogLevel.Information => ":information_source: ",
+                LogLevel.Warning => ":warning: ",
+                LogLevel.Error => ":skull: ",
+                LogLevel.Critical => ":radioactive: ",
+                _ => string.Empty
             };
 
-            switch (logLevel)
+            var model = new DiscordLogModel()
             {
-                case LogLevel.None:
-                case LogLevel.Trace:
-                    break;
-                case LogLevel.Debug:
-                    embed.Title = $":spider_web: {embed.Title}";
-                    break;
-                case LogLevel.Information:
-                    embed.Title = $":information_source: {embed.Title}";
-                    embed.Color = Color.Teal;
-                    break;
-                case LogLevel.Warning:
-                    embed.Title = $":warning: {embed.Title}";
-                    embed.Color = Color.Orange;
-                    break;
-                case LogLevel.Error:
-                    embed.Title = $":skull: {embed.Title}";
-                    embed.Color = Color.Red;
-                    break;
-                case LogLevel.Critical:
-                    embed.Title = $":radioactive: {embed.Title}";
-                    embed.Color = Color.DarkRed;
-                    break;
-                default:
-                    return;
-            }
-
-            var client = new DiscordWebhookClient(_config.WebhookUrl);
+                Message = $"{icon}**[{logLevel}]**   {formattedMessage}"
+            };
 
             if (exception == null)
             {
-                client.SendMessageAsync(null, false, new[] { embed.Build() });
+                _queue.Add(model);
                 return;
             }
 
             #region build details text
 
+            var embed = new EmbedBuilder()
+            {
+                Title = "Exception Details",
+                Color = Color.DarkRed
+            };
+
+            embed.AddField("Message", exception.Message);
             embed.AddField("Exception type", exception.GetType().ToString());
             embed.AddField("Source", exception.Source);
 
-            var exceptionInfoText = new StringBuilder();
+            /*var exceptionInfoText = new StringBuilder();
 
-            exceptionInfoText.AppendFormat("Message: {0}\r\n", exception.Message);
-            exceptionInfoText.AppendFormat("Exception type: {0}\r\n", exception.GetType());
-            exceptionInfoText.AppendFormat("Source: {0}\r\n", exception.Source);
+            exceptionInfoText.Append($"Message: {exception.Message}\r\n");
+            exceptionInfoText.Append($"Exception type: {exception.GetType()}\r\n");
+            exceptionInfoText.Append($"Source: {exception.Source}\r\n");
 
             var compareException = exception;
             var innerException = compareException.GetBaseException();
             while (compareException != innerException)
             {
-                exceptionInfoText.AppendFormat("Base exception: {0}\r\n", innerException.Message);
+                exceptionInfoText.Append($"\r\nBase exception: {innerException.Message}\r\n");
 
                 compareException = innerException;
                 innerException = compareException.GetBaseException();
+            }
+
+            if (exception.Data.Count > 0)
+            {
+                exceptionInfoText.Append("\r\n");
             }
 
             foreach (DictionaryEntry data in exception.Data)
@@ -103,21 +106,48 @@ namespace DiscordLogging
                 exceptionInfoText.Append($"{data.Key}: {data.Value}\r\n");
             }
 
-            exceptionInfoText.AppendFormat("Stack trace: {0}\r\n", exception.StackTrace);
+            exceptionInfoText.Append($"\r\nStack trace: {exception.StackTrace}\r\n");
 
             var exceptionDetails = Encoding.UTF8.GetBytes(exceptionInfoText.ToString());
 
-            #endregion
 
             using var stream = new MemoryStream(exceptionDetails);
 
-            client.SendFileAsync(stream, "exception-details.txt", null, false, new[] { embed.Build() });
+            client.SendFileAsync(stream, "exception-details.txt", formattedMessage, embeds: new[] { embed.Build() });
+            */
+
+            #endregion
+
+            var compareException = exception;
+            var innerException = compareException.GetBaseException();
+            var counter = 0;
+            while (compareException != innerException)
+            {
+                embed.AddField($"Inner Exception {++counter}", innerException.Message);
+
+                compareException = innerException;
+                innerException = compareException.GetBaseException();
+            }
+
+            if (exception.Data.Count > 0)
+            {
+                var sb = new StringBuilder();
+                foreach (DictionaryEntry data in exception.Data)
+                {
+                    sb.AppendLine($"{data.Key}: {data.Value}");
+                }
+
+                embed.AddField("Exception Data", sb.ToString());
+            }
+
+            embed.AddField("Stack Trace", exception.StackTrace);
+
+            model.DiscordEmbeds = new[] { embed.Build() };
+
+            _queue.Add(model);
         }
 
-        public bool IsEnabled(LogLevel logLevel)
-        {
-            return _config.WebhookUrl.StartsWith("https://discord.com/api/webhooks/");
-        }
+        public bool IsEnabled(LogLevel logLevel) => true;
 
         public IDisposable BeginScope<TState>(TState state) => default;
     }
