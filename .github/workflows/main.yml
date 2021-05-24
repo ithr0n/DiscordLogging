@@ -49,7 +49,7 @@ jobs:
       run: dotnet user-secrets set DiscordWebhookUrl $DISCORD_WEBHOOK_URL --project $TEST_PROJECT
 
     - name: Build
-      run: dotnet build $SOLUTION --configuration $BUILD_CONFIG --no-restore
+      run: dotnet build $SOLUTION --configuration $BUILD_CONFIG -p:Version=$BUILD_VERSION --no-restore
 
     - name: Run tests
       run: dotnet test $SOLUTION /p:Configuration=$BUILD_CONFIG --no-restore --no-build --verbosity normal
