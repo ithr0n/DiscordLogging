@@ -30,7 +30,14 @@ namespace DiscordLogging
 
             foreach (var e in _queue.GetConsumingEnumerable(CancellationToken.None))
             {
-                await client.SendMessageAsync(e.Message, embeds: e.DiscordEmbeds);
+                if (e.FileStream != null)
+                {
+                    await client.SendFileAsync(e.FileStream, e.FileName ?? "file.txt", e.Message);
+                }
+                else
+                {
+                    await client.SendMessageAsync(e.Message, embeds: e.DiscordEmbeds);
+                }
             }
         }
 
