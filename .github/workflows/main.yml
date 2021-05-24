@@ -24,11 +24,11 @@ jobs:
       with:
         dotnet-version: 5.0.x
         
-    - name: Restore dependencies
-      run: dotnet restore
-
     - name: Set secrets
       run: dotnet user-secrets set DiscordWebhookUrl ${{secrets.DISCORD_WEBHOOK_URL}} --project DiscordLogging.Tests\DiscordLogging.Tests.csproj
+
+    - name: Restore dependencies
+      run: dotnet restore
 
     - name: Build
       run: dotnet build --configuration $BUILD_CONFIG --no-restore
