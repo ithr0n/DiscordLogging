@@ -7,7 +7,6 @@
 
     <PropertyGroup>
         <PackageId>DiscordLogging</PackageId>
-        <Version>1.0.0</Version>
         <Authors>Felix Czylwik</Authors>
         <PackageTags>Discord;Logging;Log;Microsoft.Extensions.Logging</PackageTags>
         <Description>
