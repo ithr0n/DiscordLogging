@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -7,13 +8,18 @@ namespace DiscordLogging.Tests
     [TestClass]
     public class DiscordLoggerTests
     {
-        private const string WebhookUrl = "valid_webhook_url_here";
-
         private readonly ILogger _logger;
+
+        public IConfiguration Configuration { get; set; }
 
         public DiscordLoggerTests()
         {
-            _logger = GetDiscordLogger(WebhookUrl);
+            var builder = new ConfigurationBuilder()
+                .AddUserSecrets<DiscordLoggerTests>();
+
+            Configuration = builder.Build();
+
+            _logger = GetDiscordLogger(Configuration["DiscordWebhookUrl"]);
         }
         
         private static ILogger GetDiscordLogger(string urlWebhook)

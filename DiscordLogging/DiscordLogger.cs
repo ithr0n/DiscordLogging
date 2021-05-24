@@ -114,7 +114,10 @@ namespace DiscordLogging
             client.SendFileAsync(stream, "exception-details.txt", null, false, new[] { embed.Build() });
         }
 
-        public bool IsEnabled(LogLevel logLevel) => true;
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return _config.WebhookUrl.StartsWith("https://discord.com/api/webhooks/");
+        }
 
         public IDisposable BeginScope<TState>(TState state) => default;
     }
