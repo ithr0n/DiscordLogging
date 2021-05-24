@@ -27,6 +27,9 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
+    - name: Set secrets
+      run: dotnet user-secrets set DiscordWebhookUrl ${{secrets.DISCORD_WEBHOOK_URL}}
+
     - name: Build
       run: dotnet build --configuration $BUILD_CONFIG --no-restore
 
