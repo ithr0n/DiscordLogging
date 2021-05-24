@@ -1,13 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Discord.Net.Webhook" Version="2.4.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
-  </ItemGroup>
+    <PropertyGroup>
+        <PackageId>DiscordLogging</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Felix Czylwik</Authors>
+        <PackageTags>Discord;Logging;Log;Microsoft.Extensions.Logging</PackageTags>
+        <Description>
+            Discord Logging Provider for Microsoft.Extensions.Logging
+
+            Introduction to Logging in .NET - https://docs.microsoft.com/en-us/dotnet/core/extensions/logging
+            Information about Logging Providers - https://docs.microsoft.com/en-us/dotnet/core/extensions/logging-providers
+        </Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Discord.Net.Webhook" Version="2.4.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+    </ItemGroup>
 
 </Project>
