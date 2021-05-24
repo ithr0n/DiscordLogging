@@ -13,6 +13,9 @@ jobs:
 
     env:
       BUILD_CONFIG: 'Release'
+      SOLUTION: 'DiscordLogging.sln'
+      TEST_PROJECT: 'DiscordLogging.Tests/DiscordLogging.Tests.csproj'
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
     runs-on: ubuntu-latest
 
@@ -24,14 +27,14 @@ jobs:
       with:
         dotnet-version: 5.0.x
         
+    - name: Set secrets
+      run: dotnet user-secrets set DiscordWebhookUrl $DISCORD_WEBHOOK_URL --project $TEST_PROJECT
+
     - name: Restore dependencies
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --configuration $BUILD_CONFIG --no-restore
-
-    - name: Set secrets
-      run: dotnet user-secrets set DiscordWebhookUrl ${{secrets.DISCORD_WEBHOOK_URL}} --project "..\DiscordLogging.Tests\DiscordLogging.Tests.csproj"
+      run: dotnet build $SOLUTION --configuration $BUILD_CONFIG --no-restore
 
     - name: Run tests
-      run: dotnet test /p:Configuration=$env:BUILD_CONFIG --no-restore --no-build --verbosity normal
+      run: dotnet test $SOLUTION /p:Configuration=$BUILD_CONFIG --no-restore --no-build --verbosity normal
