@@ -124,7 +124,7 @@ namespace DiscordLogging
                     continue;
                 }
 
-                if (sb.Length + msg.Message.Length > _options.BulkMessageLimit)
+                if (sb.Length + msg.Message.Length > _options.MessageLimit)
                 {
                     // message limit is reached, add previous parsed messages as bulk message
                     result.Add(new DiscordLogMessage { Message = sb.ToString() });

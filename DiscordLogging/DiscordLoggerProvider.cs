@@ -34,9 +34,9 @@ namespace DiscordLogging
                 throw new ArgumentException($"Invalid Discord webhook URL: {_options.WebhookUrl}");
             }
 
-            if (_options.BulkMessageLimit <= 0)
+            if (_options.MessageLimit <= 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(_options.BulkMessageLimit), $"{nameof(_options.BulkMessageLimit)} must be a positive number.");
+                throw new ArgumentOutOfRangeException(nameof(_options.MessageLimit), $"{nameof(_options.MessageLimit)} must be a positive number.");
             }
 
             if (_options.Period <= TimeSpan.Zero)

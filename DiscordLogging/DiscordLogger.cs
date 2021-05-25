@@ -53,7 +53,7 @@ namespace DiscordLogging
             var msg = new DiscordLogMessage();
             var text = $"{icon} **[{logLevel}]**   {formattedMessage}";
 
-            if (text.Length > _options.BulkMessageLimit)
+            if (text.Length > _options.MessageLimit)
             {
                 msg.Message = "Log Message attached as File, because it is too long.";
                 msg.File = new MemoryStream(Encoding.UTF8.GetBytes(text));
