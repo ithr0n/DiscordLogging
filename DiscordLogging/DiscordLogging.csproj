@@ -15,12 +15,15 @@ Logging Provider for Microsoft.Extensions.Logging via Discord Webhooks
 Introduction to Logging in .NET - https://docs.microsoft.com/en-us/dotnet/core/extensions/logging
 Information about Logging Providers - https://docs.microsoft.com/en-us/dotnet/core/extensions/logging-providers
         </Description>
+        <RepositoryUrl>https://github.com/ithr0n/DiscordLogging</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Discord.Net.Webhook" Version="2.4.0" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="5.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="5.0.0" />
     </ItemGroup>
 
 </Project>

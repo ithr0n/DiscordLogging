@@ -3,7 +3,7 @@ using Discord;
 
 namespace DiscordLogging
 {
-    public class DiscordLogModel
+    public class DiscordLogMessage
     {
         public string Message { get; set; }
 

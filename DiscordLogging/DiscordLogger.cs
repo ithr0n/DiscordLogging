@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.IO;
 using System.Text;
 using Discord;
 using Microsoft.Extensions.Logging;
@@ -9,11 +10,15 @@ namespace DiscordLogging
     public sealed class DiscordLogger
         : ILogger
     {
-        private readonly AsyncWorker _asyncWorker;
+        private readonly DiscordLoggerOptions _options;
 
-        public DiscordLogger(AsyncWorker asyncWorker)
+        private readonly ICanHandleMessages _messageQueue;
+        
+        public DiscordLogger(DiscordLoggerOptions options, ICanHandleMessages messageQueue)
         {
-            _asyncWorker = asyncWorker;
+            _options = options;
+
+            _messageQueue = messageQueue;
         }
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
@@ -23,7 +28,13 @@ namespace DiscordLogging
                 return;
             }
 
+            if (formatter == null)
+            {
+                throw new ArgumentNullException(nameof(formatter));
+            }
+
             var formattedMessage = formatter(state, exception);
+
             if (string.IsNullOrEmpty(formattedMessage))
             {
                 return;
@@ -39,14 +50,22 @@ namespace DiscordLogging
                 _ => ":black_large_square:"
             };
 
-            var model = new DiscordLogModel()
+            var msg = new DiscordLogMessage();
+            var text = $"{icon} **[{logLevel}]**   {formattedMessage}";
+
+            if (text.Length > _options.BulkMessageLimit)
             {
-                Message = $"{icon} **[{logLevel}]**   {formattedMessage}"
-            };
+                msg.Message = "Log Message attached as File, because it is too long.";
+                msg.File = new MemoryStream(Encoding.UTF8.GetBytes(text));
+            }
+            else
+            {
+                msg.Message = text;
+            }
 
             if (exception == null)
             {
-                _asyncWorker.AddToQueue(model);
+                _messageQueue.AddMessage(msg);
                 return;
             }
 
@@ -124,13 +143,23 @@ namespace DiscordLogging
 
             embed.AddField("Stack Trace", exception.StackTrace);
 
-            model.Embeds = new [] { embed.Build() };
+            msg.Embeds = new [] { embed.Build() };
 
-            _asyncWorker.AddToQueue(model);
+            _messageQueue.AddMessage(msg);
         }
 
         public bool IsEnabled(LogLevel logLevel) => true;
 
-        public IDisposable BeginScope<TState>(TState state) => default;
+        public IDisposable BeginScope<TState>(TState state) => NoopDisposable.Instance;
+        
+        private class NoopDisposable 
+            : IDisposable
+        {
+            public static readonly NoopDisposable Instance = new();
+
+            public void Dispose()
+            {
+            }
+        }
     }
 }
